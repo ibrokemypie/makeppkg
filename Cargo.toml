@@ -1,0 +1,7 @@
+[package]
+name = "makeppkg"
+version = "0.1.0"
+authors = ["ibrokemypie <ibrokemypie@bastardi.net>"]
+
+[dependencies]
+xdg = "^2.1"
