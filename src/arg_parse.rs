@@ -2,9 +2,10 @@ extern crate xdg;
 
 use std::env::args;
 use std::process;
+use std::path::PathBuf;
 
 // Parses arguments from CLI
-pub fn arg_parse() -> (Vec<String>, String) {
+pub fn arg_parse() -> (Vec<String>, PathBuf) {
     // Get fallback XDG config home
     let xdg_dirs = xdg::BaseDirectories::with_prefix("makeppkg").unwrap();
     let xdghome = xdg_dirs
@@ -12,7 +13,7 @@ pub fn arg_parse() -> (Vec<String>, String) {
         .into_os_string()
         .into_string()
         .unwrap();
-    let mut location = xdghome;
+    let mut location = PathBuf::from(xdghome);
 
     // Store arguments
     let mut arguments = args().enumerate();
@@ -28,7 +29,7 @@ pub fn arg_parse() -> (Vec<String>, String) {
             options.remove(index);
             options.remove(index - 1);
             // Store value after -f as new location
-            location = unwrapped.1;
+            location = PathBuf::from(unwrapped.1);
         } else {
             // Fail if -f provided with no location
             println!("Provide a location when using the -l option");

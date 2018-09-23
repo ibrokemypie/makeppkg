@@ -1,17 +1,6 @@
-use std::fs::File;
-use std::io::prelude::*;
-
-pub fn package_name() -> (Result<String, String>) {
-    let mut contents = String::new();
-
-    // Open PKGBUILD and return an error if fails
-    let mut pkgbuild = File::open("PKGBUILD").map_err(|e| e.to_string())?;
-    // Read pkgbuild to string and return error if fails
-    pkgbuild
-        .read_to_string(&mut contents)
-        .map_err(|e| e.to_string())?;
+pub fn package_name(pkgbuild_contents: String) -> (Result<String, String>) {
     // Search for "pkgname=" in string
-    for line in contents.lines() {
+    for line in pkgbuild_contents.lines() {
         if line.starts_with("pkgname=") {
             // Remove "pkgname=" from resultant string
             let (_, mut value) = line.split_at(8);

@@ -5,3 +5,4 @@ authors = ["ibrokemypie <ibrokemypie@bastardi.net>"]
 
 [dependencies]
 xdg = "^2.1"
+checksums = "0.5.5"
