@@ -1,10 +1,13 @@
 extern crate checksums;
 
+use file_to_string::file_to_string;
 use std::fs::read_dir;
+use std::fs::File;
 use std::path::PathBuf;
 
 #[derive(Debug)]
 struct PatchFile {
+    name: String,
     path: PathBuf,
     checksum: Option<String>,
 }
@@ -26,8 +29,10 @@ fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, 
         read_dir(patch_path).map_err(|e| format!("{}: {}", e.to_string(), patch_path_string))?
     {
         let patch_path = entry.map_err(|e| e.to_string())?.path();
+        let patch_name = patch_name(patch_path.to_owned());
         if patch_path.to_string_lossy().ends_with(".patch") {
             let mut patch = PatchFile {
+                name: patch_name,
                 path: patch_path,
                 checksum: None,
             };
@@ -37,12 +42,32 @@ fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, 
     Ok(patches)
 }
 
+fn patch_name(patch_path: PathBuf) -> String{
+    match File::open(patch_path.to_owned()).map_err(|e| e.to_string()) {
+        Ok(patchfile) => match file_to_string(patchfile) {
+            Ok(patch) => {
+                let line = patch.lines().next();
+                if line.is_some() {
+                        let (_, split) = line.unwrap().split_at(3);
+                        let name = split.split_whitespace().next().unwrap();
+                        return name.to_string();
+                    }
+
+            },
+            Err(error) => println!("{}", error),
+        },
+        Err(error) => println!("{}", error),
+    };
+    return patch_path.file_stem().unwrap().to_string_lossy().into_owned();
+}
+
 fn compute_sums(patches: Vec<PatchFile>, pkgbuild_contents: String) {
     match find_algorithm(pkgbuild_contents) {
         Ok(algorithm) => for mut patch in patches {
             patch.checksum = Some(checksums::hash_file(&patch.path, algorithm));
             println!(
-                "Patch path: {:?}, checksum: {:?}",
+                "Patch name {}, path: {:?}, checksum: {:?}",
+                patch.name,
                 patch.path,
                 patch.checksum.unwrap()
             );
