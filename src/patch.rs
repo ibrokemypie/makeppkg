@@ -4,6 +4,7 @@ use file_to_string::file_to_string;
 use std::fs::read_dir;
 use std::fs::File;
 use std::path::PathBuf;
+use std::process::Command;
 
 #[derive(Debug)]
 struct PatchFile {
@@ -42,36 +43,42 @@ fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, 
     Ok(patches)
 }
 
-fn patch_name(patch_path: PathBuf) -> String{
+fn patch_name(patch_path: PathBuf) -> String {
     match File::open(patch_path.to_owned()).map_err(|e| e.to_string()) {
         Ok(patchfile) => match file_to_string(patchfile) {
             Ok(patch) => {
                 let line = patch.lines().next();
                 if line.is_some() {
-                        let (_, split) = line.unwrap().split_at(3);
-                        let name = split.split_whitespace().next().unwrap();
-                        return name.to_string();
-                    }
-
-            },
+                    let (_, split) = line.unwrap().split_at(3);
+                    let name = split.split_whitespace().next().unwrap();
+                    return name.to_string();
+                }
+            }
             Err(error) => println!("{}", error),
         },
         Err(error) => println!("{}", error),
     };
-    return patch_path.file_stem().unwrap().to_string_lossy().into_owned();
+    return patch_path
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
 }
 
-fn compute_sums(patches: Vec<PatchFile>, pkgbuild_contents: String) {
+fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild_contents: String) {
     match find_algorithm(pkgbuild_contents) {
-        Ok(algorithm) => for mut patch in patches {
-            patch.checksum = Some(checksums::hash_file(&patch.path, algorithm));
-            println!(
-                "Patch name {}, path: {:?}, checksum: {:?}",
-                patch.name,
-                patch.path,
-                patch.checksum.unwrap()
-            );
-        },
+        Ok(algorithm) => {
+            for patch in &mut patches {
+                patch.checksum = Some(checksums::hash_file(&patch.path, algorithm));
+                println!(
+                    "Patch name {}, path: {:?}, checksum: {:?}",
+                    &patch.name,
+                    &patch.path,
+                    &patch.checksum.to_owned().unwrap()
+                );
+            }
+            patch_pkgbuild(patches);
+        }
         Err(error) => println!("{}", error),
     };
 }
@@ -89,4 +96,29 @@ fn find_algorithm(pkgbuild_contents: String) -> Result<checksums::Algorithm, Str
         }
     }
     Err("No algorithm found".to_string())
+}
+
+fn patch_pkgbuild(patches: Vec<PatchFile>) {
+    for patch in patches {
+        if patch.name.to_uppercase() == "PKGBUILD" {
+            match Command::new("patch")
+                .arg("-i")
+                .arg(patch.path)
+                .output()
+                .map_err(|e| e.to_string())
+            {
+                Ok(output) => {
+                    if output.status.success() {
+                        println!("PKGBUILD patched successfully.");
+                    } else {
+                        println!("Failed to patch PKGBUILD:");
+                        println!("{}", String::from_utf8_lossy(&output.stdout));
+                    }
+                    break;
+                }
+                Err(error) => println!("{}", error),
+            }
+        }
+    }
+    println!("No patches for PKGBUILD found, continuing.");
 }
