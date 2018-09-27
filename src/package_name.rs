@@ -1,27 +1,22 @@
-pub fn package_name(pkgbuild_contents: String) -> (Result<String, String>) {
-    // Search for "pkgname=" in string
-    for line in pkgbuild_contents.lines() {
-        if line.starts_with("pkgname=") {
-            // Remove "pkgname=" from resultant string
-            let (_, mut value) = line.split_at(8);
-            // Logic for multiple names
-            if value.starts_with("(") {
-                // Remove "(", ")" and "'" fron string
-                let matches = ['(', ')', '\''];
-                let names = value
-                    .chars()
-                    .filter(|m| !matches.contains(m))
-                    .collect::<String>();
-                // Split into array of names
-                let pkgname = names.split(", ").next().unwrap();
-                // Return first name
-                return Ok(pkgname.to_string());
-            }
-            // Return name
-            let pkgname = value;
-            return Ok(pkgname.to_string());
-        }
+extern crate pkgparse_rs as pkgparse;
+
+use std::ffi::CStr;
+
+pub fn package_name(pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<String, String> {
+    let mut external_pointer = unsafe { pkgparse::pkgbuild_names(pkgbuild) };
+    let mut pkgnames: Vec<&CStr> = vec![];
+    if external_pointer.is_null() {
+        return Err("No package name found".to_string());
     }
-    // Return error if no names found
-    return Err("No package name found".to_string());
+    loop {
+        unsafe {
+            let internal_pointer = *external_pointer;
+            if (internal_pointer).is_null() {
+                break;
+            }
+            pkgnames.push(&CStr::from_ptr(internal_pointer));
+            external_pointer = external_pointer.add(1)
+        };
+    }
+    return Ok(pkgnames[0].to_string_lossy().into_owned());
 }

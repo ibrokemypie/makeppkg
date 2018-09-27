@@ -6,3 +6,5 @@ authors = ["ibrokemypie <ibrokemypie@bastardi.net>"]
 [dependencies]
 xdg = "^2.1"
 checksums = "0.5.5"
+pkgparse_rs = "0.2.0"
+libc = "^0.1.0"

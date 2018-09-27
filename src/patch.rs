@@ -1,4 +1,5 @@
 extern crate checksums;
+extern crate pkgparse_rs as pkgparse;
 
 use file_to_string::file_to_string;
 use std::fs::read_dir;
@@ -13,9 +14,9 @@ struct PatchFile {
     checksum: Option<String>,
 }
 
-pub fn patch(location: PathBuf, pkgname: String, pkgbuild_contents: String) {
+pub fn patch(location: PathBuf, pkgname: String, pkgbuild: *mut pkgparse::pkgbuild_t) {
     match find_patches(location, &pkgname) {
-        Ok(patches) => compute_sums(patches, pkgbuild_contents),
+        Ok(patches) => compute_sums(patches, pkgbuild),
         Err(error) => println!("No patches were able to be found: {}", error),
     }
 }
@@ -65,8 +66,8 @@ fn patch_name(patch_path: PathBuf) -> String {
         .into_owned();
 }
 
-fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild_contents: String) {
-    match find_algorithm(pkgbuild_contents) {
+fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild: *mut pkgparse::pkgbuild_t) {
+    match find_algorithm(pkgbuild) {
         Ok(algorithm) => {
             for patch in &mut patches {
                 patch.checksum = Some(checksums::hash_file(&patch.path, algorithm));
@@ -83,17 +84,15 @@ fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild_contents: String) {
     };
 }
 
-fn find_algorithm(pkgbuild_contents: String) -> Result<checksums::Algorithm, String> {
-    for line in pkgbuild_contents.lines() {
-        if line.starts_with("md5sums=") {
-            return Ok(checksums::Algorithm::MD5);
-        } else if line.starts_with("sha256sums=") {
-            return Ok(checksums::Algorithm::SHA2256);
-        } else if line.starts_with("sha1sums=") {
-            return Ok(checksums::Algorithm::SHA1);
-        } else if line.starts_with("sha512sums=") {
-            return Ok(checksums::Algorithm::SHA2512);
-        }
+fn find_algorithm(pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<checksums::Algorithm, String> {
+    if unsafe { !pkgparse::pkgbuild_md5sums(pkgbuild).is_null() } {
+        return Ok(checksums::Algorithm::MD5);
+    } else if unsafe { !pkgparse::pkgbuild_sha256sums(pkgbuild).is_null() } {
+        return Ok(checksums::Algorithm::SHA2256);
+    } else if unsafe { !pkgparse::pkgbuild_sha1sums(pkgbuild).is_null() } {
+        return Ok(checksums::Algorithm::SHA1);
+    } else if unsafe { !pkgparse::pkgbuild_sha512sums(pkgbuild).is_null() } {
+        return Ok(checksums::Algorithm::SHA2512);
     }
     Err("No algorithm found".to_string())
 }
