@@ -7,6 +7,7 @@ use std::fs::read_dir;
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
+use std::ptr;
 
 #[derive(Debug)]
 struct PatchFile {
@@ -80,7 +81,7 @@ fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild: *mut pkgparse::pkgbuild_t
                 );
             }
             patch_pkgbuild(&mut patches);
-            append_patches(pkgbuild, &patches);
+            append_patches(pkgbuild, &patches, &algorithm);
         }
         Err(error) => println!("{}", error),
     };
@@ -127,7 +128,11 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
     }
 }
 
-fn append_patches(pkgbuild: *mut pkgparse::pkgbuild_t, patches: &Vec<PatchFile>) {
+fn append_patches(
+    pkgbuild: *mut pkgparse::pkgbuild_t,
+    patches: &Vec<PatchFile>,
+    algorithm: &checksums::Algorithm,
+) {
     match c_to_r_array(unsafe { pkgparse::pkgbuild_sources(pkgbuild) }) {
         Ok(sources) => {
             let mut newsources: Vec<PathBuf> = vec![];
@@ -138,7 +143,26 @@ fn append_patches(pkgbuild: *mut pkgparse::pkgbuild_t, patches: &Vec<PatchFile>)
                 newsources.push(patch.path.to_owned())
             }
             println!("Sources: {:?}", newsources);
-        }
-        Err(_) => {}
+        },
+        Err(_) => println!("No sources found"),
+    }
+
+
+    let c_checksums;
+    match algorithm {
+        checksums::Algorithm::MD5 =>  c_checksums = unsafe { pkgparse::pkgbuild_md5sums(pkgbuild) },
+        checksums::Algorithm::SHA2256 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha256sums(pkgbuild) },
+        checksums::Algorithm::SHA2512 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha512sums(pkgbuild) },
+        checksums::Algorithm::SHA1 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha1sums(pkgbuild) },
+        _ => c_checksums =  ptr::null(),
+    }
+    match  c_to_r_array(c_checksums) {
+        Ok(mut checksums) => {
+            for mut patch in patches {
+                checksums.push(patch.checksum.to_owned().unwrap());
+            }
+            println!("Checksums: {:?}", checksums)
+        },
+        Err(_) => println!("No checksums found"),
     }
 }
