@@ -1,13 +1,12 @@
 extern crate checksums;
 extern crate pkgparse_rs as pkgparse;
 
+use c_to_r_array::c_to_r_array;
 use file_to_string::file_to_string;
 use std::fs::read_dir;
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
-
-use std::ffi::CStr;
 
 #[derive(Debug)]
 struct PatchFile {
@@ -129,29 +128,17 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
 }
 
 fn append_patches(pkgbuild: *mut pkgparse::pkgbuild_t, patches: &Vec<PatchFile>) {
-    let mut external_pointer = unsafe { pkgparse::pkgbuild_sources(pkgbuild) };
-    let mut sources: Vec<PathBuf> = vec![];
-    if !external_pointer.is_null() {
-        loop {
-            unsafe {
-                let internal_pointer = *external_pointer;
-                if (internal_pointer).is_null() {
-                    break;
-                }
-                sources.push(PathBuf::from(
-                    CStr::from_ptr(internal_pointer)
-                        .to_string_lossy()
-                        .into_owned(),
-                ));
-                external_pointer = external_pointer.add(1)
-            };
+    match c_to_r_array(unsafe { pkgparse::pkgbuild_sources(pkgbuild) }) {
+        Ok(sources) => {
+            let mut newsources: Vec<PathBuf> = vec![];
+            for source in sources {
+                newsources.push(PathBuf::from(source));
+            }
+            for patch in patches {
+                newsources.push(patch.path.to_owned())
+            }
+            println!("Sources: {:?}", newsources);
         }
-        println!("Sources: {:?}", sources);
-    } else {
-        println!("No sources found.");
+        Err(_) => {}
     }
-    for patch in patches {
-        sources.push(patch.path.to_owned())
-    }
-    println!("Sources: {:?}", sources);
 }

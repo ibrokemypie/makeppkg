@@ -6,7 +6,9 @@ mod file_to_string;
 mod package_name;
 mod patch;
 mod run_makepkg;
+mod c_to_r_array;
 
+use c_to_r_array::c_to_r_array;
 use arg_parse::arg_parse;
 use package_name::package_name;
 use patch::patch;
