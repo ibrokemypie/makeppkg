@@ -7,6 +7,8 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
 
+use std::ffi::CStr;
+
 #[derive(Debug)]
 struct PatchFile {
     name: String,
@@ -78,7 +80,8 @@ fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild: *mut pkgparse::pkgbuild_t
                     &patch.checksum.to_owned().unwrap()
                 );
             }
-            patch_pkgbuild(patches);
+            patch_pkgbuild(&mut patches);
+            append_patches(pkgbuild, &patches);
         }
         Err(error) => println!("{}", error),
     };
@@ -97,27 +100,58 @@ fn find_algorithm(pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<checksums::Algo
     Err("No algorithm found".to_string())
 }
 
-fn patch_pkgbuild(patches: Vec<PatchFile>) {
-    for patch in patches {
-        if patch.name.to_uppercase() == "PKGBUILD" {
-            match Command::new("patch")
-                .arg("-i")
-                .arg(patch.path)
-                .output()
-                .map_err(|e| e.to_string())
-            {
-                Ok(output) => {
-                    if output.status.success() {
-                        println!("PKGBUILD patched successfully.");
-                    } else {
-                        println!("Failed to patch PKGBUILD:");
-                        println!("{}", String::from_utf8_lossy(&output.stdout));
-                    }
-                    break;
+fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
+    match patches
+        .iter()
+        .position(|item| item.name.eq_ignore_ascii_case("PKGBUILD"))
+    {
+        Some(i) => match Command::new("patch")
+            .arg("-i")
+            .arg(&patches[i].path)
+            .output()
+            .map_err(|e| e.to_string())
+        {
+            Ok(output) => {
+                if output.status.success() {
+                    println!("PKGBUILD patched successfully.");
+                    patches.remove(i);
+                } else {
+                    println!("Failed to patch PKGBUILD:");
+                    println!("{}", String::from_utf8_lossy(&output.stdout));
                 }
-                Err(error) => println!("{}", error),
             }
+            Err(error) => println!("{}", error),
+        },
+        None => {
+            println!("No patches for PKGBUILD found, continuing.");
         }
     }
-    println!("No patches for PKGBUILD found, continuing.");
+}
+
+fn append_patches(pkgbuild: *mut pkgparse::pkgbuild_t, patches: &Vec<PatchFile>) {
+    let mut external_pointer = unsafe { pkgparse::pkgbuild_sources(pkgbuild) };
+    let mut sources: Vec<PathBuf> = vec![];
+    if !external_pointer.is_null() {
+        loop {
+            unsafe {
+                let internal_pointer = *external_pointer;
+                if (internal_pointer).is_null() {
+                    break;
+                }
+                sources.push(PathBuf::from(
+                    CStr::from_ptr(internal_pointer)
+                        .to_string_lossy()
+                        .into_owned(),
+                ));
+                external_pointer = external_pointer.add(1)
+            };
+        }
+        println!("Sources: {:?}", sources);
+    } else {
+        println!("No sources found.");
+    }
+    for patch in patches {
+        sources.push(patch.path.to_owned())
+    }
+    println!("Sources: {:?}", sources);
 }
