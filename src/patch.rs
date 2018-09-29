@@ -20,9 +20,9 @@ pub fn patch(
     location: PathBuf,
     pkgname: String,
     pkgbuild: *mut pkgparse::pkgbuild_t,
+    srcinfo: &String,
 ) -> Result<String, String> {
     let mut patches;
-    let algorithm;
     match find_patches(location, &pkgname) {
         Ok(found_patches) => patches = found_patches,
         Err(error) => return Err(error),
@@ -30,7 +30,8 @@ pub fn patch(
 
     patch_pkgbuild(&mut patches);
 
-    match find_algorithm(pkgbuild) {
+    let algorithm;
+    match find_algorithm(&srcinfo) {
         Ok(found_algorithm) => algorithm = found_algorithm,
         Err(error) => return Err(error),
     };
@@ -96,15 +97,18 @@ fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &checksums::Algorithm) 
     }
 }
 
-fn find_algorithm(pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<checksums::Algorithm, String> {
-    if unsafe { !pkgparse::pkgbuild_md5sums(pkgbuild).is_null() } {
-        return Ok(checksums::Algorithm::MD5);
-    } else if unsafe { !pkgparse::pkgbuild_sha256sums(pkgbuild).is_null() } {
-        return Ok(checksums::Algorithm::SHA2256);
-    } else if unsafe { !pkgparse::pkgbuild_sha1sums(pkgbuild).is_null() } {
-        return Ok(checksums::Algorithm::SHA1);
-    } else if unsafe { !pkgparse::pkgbuild_sha512sums(pkgbuild).is_null() } {
-        return Ok(checksums::Algorithm::SHA2512);
+fn find_algorithm(srcinfo: &String) -> Result<checksums::Algorithm, String> {
+    for mut line in srcinfo.lines() {
+        line = line.trim();
+        if line.starts_with("md5sums = ") {
+            return Ok(checksums::Algorithm::MD5);
+        } else if line.starts_with("sha256sums = ") {
+            return Ok(checksums::Algorithm::SHA2256);
+        } else if line.starts_with("sha1sums = ") {
+            return Ok(checksums::Algorithm::SHA1);
+        } else if line.starts_with("sha512sums = ") {
+            return Ok(checksums::Algorithm::SHA2512);
+        }
     }
     Err("No algorithm found".to_string())
 }

@@ -15,6 +15,7 @@ use std::fs::File;
 use std::os::unix::io::AsRawFd;
 use duct::cmd;
 use std::ffi::CString;
+use file_to_string::file_to_string;
 
 fn main() {
     // Parse CLI args
@@ -27,16 +28,19 @@ fn main() {
     );
 
     let pkgbuild;
+    let srcinfo;
     // Open PKGBUILD and return an error if fails
     match File::open("PKGBUILD").map_err(|e| e.to_string()) {
         Ok(file) => {
+            cmd("makepkg", vec!["--printsrcinfo"]).stderr_to_stdout().run();
+            srcinfo = file_to_string(File::open(".SRCINFO").unwrap()).unwrap();
             pkgbuild = file_to_pkgbuild(&file);
             // Attempt to parse pkgname from pkgbuild
             // Run patch if succeed, warn on fail
-            match package_name(pkgbuild) {
+            match package_name(&srcinfo) {
                 Ok(pkgname) => {
                     println!(", package name: {}", pkgname);
-                    match patch(location, pkgname, pkgbuild) {
+                    match patch(location, pkgname, pkgbuild, &srcinfo) {
                         Ok(_) => {}
                         Err(error) => println!("Could not run patches, continuing: {:?}", error),
                     }
@@ -47,7 +51,7 @@ fn main() {
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
     };
     // Run makepkg
-    cmd("makepkg", options).stderr_to_stdout().run().unwrap();
+    cmd("makepkg", options).stderr_to_stdout().run();
 }
 
 fn file_to_pkgbuild(file: &File) -> *mut pkgparse::pkgbuild_t {
