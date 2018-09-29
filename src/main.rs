@@ -2,13 +2,12 @@ extern crate libc;
 extern crate pkgparse_rs as pkgparse;
 
 mod arg_parse;
+mod c_to_r_array;
 mod file_to_string;
 mod package_name;
 mod patch;
 mod run_makepkg;
-mod c_to_r_array;
 
-use c_to_r_array::c_to_r_array;
 use arg_parse::arg_parse;
 use package_name::package_name;
 use patch::patch;
@@ -29,18 +28,22 @@ fn main() {
         options.join(" ")
     );
 
+    let pkgbuild;
     // Open PKGBUILD and return an error if fails
     match File::open("PKGBUILD").map_err(|e| e.to_string()) {
         Ok(file) => {
-            let pkgbuild = file_to_pkgbuild(&file);
+            pkgbuild = file_to_pkgbuild(&file);
             // Attempt to parse pkgname from pkgbuild
             // Run patch if succeed, warn on fail
             match package_name(pkgbuild) {
-                Ok(pkgname) => patch(location, pkgname, pkgbuild),
+                Ok(pkgname) => match patch(location, pkgname, pkgbuild) {
+                    Ok(_) => {}
+                    Err(error) => println!("Could not run patches, continuing: {:?}", error),
+                },
                 Err(error) => println!("Could not retireve package name, continuing: {:?}", error),
             };
         }
-        Err(error) => println!("{}", error),
+        Err(error) => println!("Couldn't open PKGBUILD: {}", error),
     };
     // Run makepkg
     run_makepkg(options);

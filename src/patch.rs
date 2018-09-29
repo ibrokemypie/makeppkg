@@ -16,11 +16,23 @@ struct PatchFile {
     checksum: Option<String>,
 }
 
-pub fn patch(location: PathBuf, pkgname: String, pkgbuild: *mut pkgparse::pkgbuild_t) {
+pub fn patch(location: PathBuf, pkgname: String, pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<String, String>{
+    let mut patches;
+    let algorithm;
     match find_patches(location, &pkgname) {
-        Ok(patches) => compute_sums(patches, pkgbuild),
-        Err(error) => println!("No patches were able to be found: {}", error),
-    }
+        Ok(found_patches) => patches = found_patches,
+        Err(error) => return Err(error),
+    };
+
+    patch_pkgbuild(&mut patches);
+
+    match find_algorithm(pkgbuild) {
+        Ok(found_algorithm) => algorithm = found_algorithm,
+        Err(error) => return Err(error),
+    };
+    compute_sums(&mut patches, &algorithm);
+    append_patches(pkgbuild, &patches, &algorithm);
+    Ok("worked".to_string())
 }
 
 fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, String>) {
@@ -68,23 +80,16 @@ fn patch_name(patch_path: PathBuf) -> String {
         .into_owned();
 }
 
-fn compute_sums(mut patches: Vec<PatchFile>, pkgbuild: *mut pkgparse::pkgbuild_t) {
-    match find_algorithm(pkgbuild) {
-        Ok(algorithm) => {
-            for patch in &mut patches {
-                patch.checksum = Some(checksums::hash_file(&patch.path, algorithm));
-                println!(
-                    "Patch name {}, path: {:?}, checksum: {:?}",
-                    &patch.name,
-                    &patch.path,
-                    &patch.checksum.to_owned().unwrap()
-                );
-            }
-            patch_pkgbuild(&mut patches);
-            append_patches(pkgbuild, &patches, &algorithm);
-        }
-        Err(error) => println!("{}", error),
-    };
+fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &checksums::Algorithm) {
+    for mut patch in patches {
+        patch.checksum = Some(checksums::hash_file(&patch.path, *algorithm));
+        println!(
+            "Patch name {}, path: {:?}, checksum: {:?}",
+            &patch.name,
+            &patch.path,
+            &patch.checksum.to_owned().unwrap()
+        );
+    }
 }
 
 fn find_algorithm(pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<checksums::Algorithm, String> {
