@@ -118,14 +118,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmake"
-version = "0.1.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "cc 1.0.25 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "constant_time_eq"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -241,7 +233,7 @@ dependencies = [
  "checksums 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "duct 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkgparse_rs 0.2.111 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "xdg 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -316,15 +308,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pkgparse_rs"
-version = "0.2.111"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "cmake 0.1.34 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "rand"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,8 +350,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "aho-corasick 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memchr 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex-syntax 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thread_local 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "utf8-ranges 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "regex-syntax"
 version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "ucd-util 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "ucd-util 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -551,7 +554,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum checksums 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)" = "88c78c1cd530c15db99d282d05866f519fbe6a4a729a7a92c17ff0ed1fb0f5d5"
 "checksum clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b957d88f4b6a63b9d70d5f454ac8011819c6efa7727858f458ab71c756ce2d3e"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-"checksum cmake 0.1.34 (registry+https://github.com/rust-lang/crates.io-index)" = "848b314ea70f48f0e13828c5554e34200952ce5720d6d3aa466b4d983af6c70e"
 "checksum constant_time_eq 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e"
 "checksum crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 "checksum crc16 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "11a65c4797332f3e3a5945e0377875afc79b1bdc87082a4f98ac1ef15b47e2dd"
@@ -577,13 +579,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum num_cpus 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c51a3322e4bca9d212ad9a158a02abc6934d005490c054a2778df73a70aa0a30"
 "checksum os_pipe 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cd9d339267cdef39ee54ef165fdfaa2c7289a7465f0188ebe1c8a63872ca64c7"
 "checksum pbr 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "deb73390ab68d81992bd994d145f697451bb0b54fd39738e72eef32458ad6907"
-"checksum pkgparse_rs 0.2.111 (registry+https://github.com/rust-lang/crates.io-index)" = "ffa786f0944a36ff20325c73e0ca714ef607a1d3a588d7c68662ba9f20bddeca"
 "checksum rand 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e464cd887e869cddcae8792a4ee31d23c7edd516700695608f5b98c67ee0131c"
 "checksum rand_core 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "edecf0f94da5551fc9b492093e30b041a891657db7940ee221f9d2f66e82eef2"
 "checksum redox_syscall 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)" = "c214e91d3ecf43e9a4e41e578973adeb14b474f2bee858742d127af75a0112b1"
 "checksum redox_termios 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7e891cfe48e9100a70a3b6eb652fef28920c117d366339687bd5576160db0f76"
 "checksum regex 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "9329abc99e39129fcceabd24cf5d85b4671ef7c29c50e972bc5afe32438ec384"
+"checksum regex 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "2069749032ea3ec200ca51e4a31df41759190a88edca0d2d86ee8bedf7073341"
 "checksum regex-syntax 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)" = "7d707a4fa2637f2dca2ef9fd02225ec7661fe01a53623c1e6515b6916511f7a7"
+"checksum regex-syntax 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "747ba3b235651f6e2f67dfa8bcdcd073ddb7c243cb21c442fc12395dfcac212d"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 "checksum same-file 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "d931a44fdaa43b8637009e7632a02adc4f2b2e0733c08caa4cf00e8da4a117a7"
 "checksum shaman 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3b1a48b7e97a07b8f5771159e6914d8459557f8f833a60c4bd041f03736844f5"

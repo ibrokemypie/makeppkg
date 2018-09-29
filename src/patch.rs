@@ -1,13 +1,11 @@
 extern crate checksums;
-extern crate pkgparse_rs as pkgparse;
 
-use c_to_r_array::c_to_r_array;
 use file_to_string::file_to_string;
+use regex::Regex;
 use std::fs::read_dir;
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
-use std::ptr;
 
 #[derive(Debug)]
 struct PatchFile {
@@ -19,7 +17,6 @@ struct PatchFile {
 pub fn patch(
     location: PathBuf,
     pkgname: String,
-    pkgbuild: *mut pkgparse::pkgbuild_t,
     srcinfo: &String,
 ) -> Result<String, String> {
     let mut patches;
@@ -36,7 +33,7 @@ pub fn patch(
         Err(error) => return Err(error),
     };
     compute_sums(&mut patches, &algorithm);
-    append_patches(pkgbuild, &patches, &algorithm);
+    append_patches(&patches, &algorithm, &srcinfo);
     Ok("worked".to_string())
 }
 
@@ -142,61 +139,55 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
 }
 
 fn append_patches(
-    pkgbuild: *mut pkgparse::pkgbuild_t,
     patches: &Vec<PatchFile>,
     algorithm: &checksums::Algorithm,
+    srcinfo: &String,
 ) {
     let mut new_sources: Vec<String> = vec![];
-    match c_to_r_array(unsafe { pkgparse::pkgbuild_sources(pkgbuild) }) {
-        Ok(sources) => {
-            for source in sources {
-                new_sources.push(source);
-            }
-            for patch in patches {
-                new_sources.push(patch.path.to_string_lossy().to_string());
-            }
-            println!("Sources: {:?}", new_sources);
+    {
+        let re = Regex::new(r"(?mi)(?:^\s*source = )(.*)+").unwrap();
+        let sources = re.captures_iter(&srcinfo);
+        for source in sources {
+            new_sources.push(source[1].to_string());
         }
-        Err(_) => println!("No sources found"),
+        for patch in patches {
+            new_sources.push(patch.path.to_string_lossy().to_string());
+        }
     }
 
-    let c_checksums;
-    let p_checksum;
+    let checksum;
     match algorithm {
         checksums::Algorithm::MD5 => {
-            c_checksums = unsafe { pkgparse::pkgbuild_md5sums(pkgbuild) };
-            p_checksum = "md5sums";
+            checksum = "md5sums";
         }
         checksums::Algorithm::SHA2256 => {
-            c_checksums = unsafe { pkgparse::pkgbuild_sha256sums(pkgbuild) };
-            p_checksum = "sha256sums";
+            checksum = "sha256sums";
         }
         checksums::Algorithm::SHA2512 => {
-            c_checksums = unsafe { pkgparse::pkgbuild_sha512sums(pkgbuild) };
-            p_checksum = "sha512sums";
+            checksum = "sha512sums";
         }
         checksums::Algorithm::SHA1 => {
-            c_checksums = unsafe { pkgparse::pkgbuild_sha1sums(pkgbuild) };
-            p_checksum = "sha1sums";
+            checksum = "sha1sums";
         }
         _ => {
-            c_checksums = ptr::null();
-            p_checksum = "null";
+            checksum = "null";
         }
     }
     let mut new_checksums: Vec<String> = vec![];
-    match c_to_r_array(c_checksums) {
-        Ok(checksums) => {
-            for mut patch in patches {
-                new_checksums.push(patch.checksum.to_owned().unwrap());
-            }
-            println!("Checksums: {:?}", checksums)
+    {
+        let re = Regex::new(&(r"(?mi)(?:^\s*".to_owned()+checksum+" = )(.*)+")).unwrap();
+        let checksums = re.captures_iter(&srcinfo);
+        for mut sum in checksums {
+            new_checksums.push(sum[1].to_string());
         }
-        Err(_) => println!("No checksums found"),
     }
+    for mut patch in patches {
+        new_checksums.push(patch.checksum.to_owned().unwrap());
+    }
+
     let mut updpkgbuild = file_to_string(File::open("PKGBUILD").unwrap()).unwrap();
     updpkgbuild = replace_array_string(updpkgbuild, "source".to_string(), new_sources);
-    updpkgbuild = replace_array_string(updpkgbuild, p_checksum.to_string(), new_checksums);
+    updpkgbuild = replace_array_string(updpkgbuild, checksum.to_string(), new_checksums);
     println!("{}", updpkgbuild);
 }
 
