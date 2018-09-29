@@ -16,7 +16,11 @@ struct PatchFile {
     checksum: Option<String>,
 }
 
-pub fn patch(location: PathBuf, pkgname: String, pkgbuild: *mut pkgparse::pkgbuild_t) -> Result<String, String>{
+pub fn patch(
+    location: PathBuf,
+    pkgname: String,
+    pkgbuild: *mut pkgparse::pkgbuild_t,
+) -> Result<String, String> {
     let mut patches;
     let algorithm;
     match find_patches(location, &pkgname) {
@@ -138,36 +142,90 @@ fn append_patches(
     patches: &Vec<PatchFile>,
     algorithm: &checksums::Algorithm,
 ) {
+    let mut new_sources: Vec<String> = vec![];
     match c_to_r_array(unsafe { pkgparse::pkgbuild_sources(pkgbuild) }) {
         Ok(sources) => {
-            let mut newsources: Vec<PathBuf> = vec![];
             for source in sources {
-                newsources.push(PathBuf::from(source));
+                new_sources.push(source);
             }
             for patch in patches {
-                newsources.push(patch.path.to_owned())
+                new_sources.push(patch.path.to_string_lossy().to_string());
             }
-            println!("Sources: {:?}", newsources);
-        },
+            println!("Sources: {:?}", new_sources);
+        }
         Err(_) => println!("No sources found"),
     }
 
-
     let c_checksums;
+    let p_checksum;
     match algorithm {
-        checksums::Algorithm::MD5 =>  c_checksums = unsafe { pkgparse::pkgbuild_md5sums(pkgbuild) },
-        checksums::Algorithm::SHA2256 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha256sums(pkgbuild) },
-        checksums::Algorithm::SHA2512 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha512sums(pkgbuild) },
-        checksums::Algorithm::SHA1 =>  c_checksums = unsafe { pkgparse::pkgbuild_sha1sums(pkgbuild) },
-        _ => c_checksums =  ptr::null(),
+        checksums::Algorithm::MD5 => {
+            c_checksums = unsafe { pkgparse::pkgbuild_md5sums(pkgbuild) };
+            p_checksum = "md5sums";
+        }
+        checksums::Algorithm::SHA2256 => {
+            c_checksums = unsafe { pkgparse::pkgbuild_sha256sums(pkgbuild) };
+            p_checksum = "sha256sums";
+        }
+        checksums::Algorithm::SHA2512 => {
+            c_checksums = unsafe { pkgparse::pkgbuild_sha512sums(pkgbuild) };
+            p_checksum = "sha512sums";
+        }
+        checksums::Algorithm::SHA1 => {
+            c_checksums = unsafe { pkgparse::pkgbuild_sha1sums(pkgbuild) };
+            p_checksum = "sha1sums";
+        }
+        _ => {
+            c_checksums = ptr::null();
+            p_checksum = "null";
+        }
     }
-    match  c_to_r_array(c_checksums) {
-        Ok(mut checksums) => {
+    let mut new_checksums: Vec<String> = vec![];
+    match c_to_r_array(c_checksums) {
+        Ok(checksums) => {
             for mut patch in patches {
-                checksums.push(patch.checksum.to_owned().unwrap());
+                new_checksums.push(patch.checksum.to_owned().unwrap());
             }
             println!("Checksums: {:?}", checksums)
-        },
+        }
         Err(_) => println!("No checksums found"),
     }
+    let mut updpkgbuild = file_to_string(File::open("PKGBUILD").unwrap()).unwrap();
+    updpkgbuild = replace_array_string(updpkgbuild, "source".to_string(), new_sources);
+    updpkgbuild = replace_array_string(updpkgbuild, p_checksum.to_string(), new_checksums);
+    println!("{}", updpkgbuild);
+}
+
+fn replace_array_string(text: String, name: String, new_array: Vec<String>) -> String {
+    let mut start = 0;
+    let mut end = 0;
+    for (number, line) in text.lines().enumerate() {
+        if start == 0 {
+            if line.starts_with(&name) {
+                start = number;
+                if line.ends_with(")") {
+                    end = number;
+                    break;
+                }
+            }
+        } else {
+            if line.ends_with(")") {
+                end = number;
+                break;
+            }
+        }
+    }
+    let mut newtext: Vec<String> = text.lines().map(|s| s.to_string()).collect();
+    newtext.drain(start..=end);
+
+    let mut newstring = name + "=(";
+    for item in new_array {
+        newstring.push_str("\n\t'");
+        newstring.push_str(&item);
+        newstring.push('\'');
+    }
+    newstring.push_str("\n)");
+    newtext.insert(start, newstring);
+
+    newtext.join("\n")
 }

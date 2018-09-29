@@ -21,8 +21,7 @@ fn main() {
     // Parse CLI args
     let (options, location) = arg_parse();
 
-    // DEBUG
-    println!(
+    print!(
         "makeppkg directory: {}, makepkg arguments: {}",
         location.to_string_lossy(),
         options.join(" ")
@@ -36,10 +35,13 @@ fn main() {
             // Attempt to parse pkgname from pkgbuild
             // Run patch if succeed, warn on fail
             match package_name(pkgbuild) {
-                Ok(pkgname) => match patch(location, pkgname, pkgbuild) {
-                    Ok(_) => {}
-                    Err(error) => println!("Could not run patches, continuing: {:?}", error),
-                },
+                Ok(pkgname) => {
+                    println!(", package name: {}", pkgname);
+                    match patch(location, pkgname, pkgbuild) {
+                        Ok(_) => {}
+                        Err(error) => println!("Could not run patches, continuing: {:?}", error),
+                    }
+                }
                 Err(error) => println!("Could not retireve package name, continuing: {:?}", error),
             };
         }
