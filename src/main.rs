@@ -1,4 +1,5 @@
 extern crate libc;
+extern crate duct;
 extern crate pkgparse_rs as pkgparse;
 
 mod arg_parse;
@@ -6,15 +7,13 @@ mod c_to_r_array;
 mod file_to_string;
 mod package_name;
 mod patch;
-mod run_makepkg;
 
 use arg_parse::arg_parse;
 use package_name::package_name;
 use patch::patch;
-use run_makepkg::run_makepkg;
 use std::fs::File;
 use std::os::unix::io::AsRawFd;
-
+use duct::cmd;
 use std::ffi::CString;
 
 fn main() {
@@ -48,7 +47,7 @@ fn main() {
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
     };
     // Run makepkg
-    run_makepkg(options);
+    cmd("makepkg", options).stderr_to_stdout().run().unwrap();
 }
 
 fn file_to_pkgbuild(file: &File) -> *mut pkgparse::pkgbuild_t {
