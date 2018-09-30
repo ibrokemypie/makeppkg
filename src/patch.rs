@@ -14,11 +14,7 @@ struct PatchFile {
     checksum: Option<String>,
 }
 
-pub fn patch(
-    location: PathBuf,
-    pkgname: String,
-    srcinfo: &String,
-) -> Result<String, String> {
+pub fn patch(location: PathBuf, pkgname: String, srcinfo: &String) -> Result<String, String> {
     let mut patches;
     match find_patches(location, &pkgname) {
         Ok(found_patches) => patches = found_patches,
@@ -138,11 +134,7 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
     }
 }
 
-fn append_patches(
-    patches: &Vec<PatchFile>,
-    algorithm: &checksums::Algorithm,
-    srcinfo: &String,
-) {
+fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, srcinfo: &String) {
     let mut new_sources: Vec<String> = vec![];
     {
         let re = Regex::new(r"(?mi)(?:^\s*source = )(.*)+").unwrap();
@@ -175,7 +167,7 @@ fn append_patches(
     }
     let mut new_checksums: Vec<String> = vec![];
     {
-        let re = Regex::new(&(r"(?mi)(?:^\s*".to_owned()+checksum+" = )(.*)+")).unwrap();
+        let re = Regex::new(&(r"(?mi)(?:^\s*".to_owned() + checksum + " = )(.*)+")).unwrap();
         let checksums = re.captures_iter(&srcinfo);
         for mut sum in checksums {
             new_checksums.push(sum[1].to_string());
@@ -186,12 +178,13 @@ fn append_patches(
     }
 
     let mut updpkgbuild = file_to_string(File::open("PKGBUILD").unwrap()).unwrap();
-    updpkgbuild = replace_array_string(updpkgbuild, "source".to_string(), new_sources);
-    updpkgbuild = replace_array_string(updpkgbuild, checksum.to_string(), new_checksums);
+    updpkgbuild = replace_array_string(&updpkgbuild, "source".to_string(), &new_sources);
+    updpkgbuild = replace_array_string(&updpkgbuild, checksum.to_string(), &new_checksums);
+    updpkgbuild = prepend_prepare_patches(&updpkgbuild, &patches);
     println!("{}", updpkgbuild);
 }
 
-fn replace_array_string(text: String, name: String, new_array: Vec<String>) -> String {
+fn replace_array_string(text: &String, name: String, new_array: &Vec<String>) -> String {
     let mut start = 0;
     let mut end = 0;
     for (number, line) in text.lines().enumerate() {
@@ -223,4 +216,45 @@ fn replace_array_string(text: String, name: String, new_array: Vec<String>) -> S
     newtext.insert(start, newstring);
 
     newtext.join("\n")
+}
+
+fn prepend_prepare_patches(pkgbuild: &String, patches: &Vec<PatchFile>) -> String {
+    let mut prepare_start = 0;
+    let mut build_start = 0;
+    for (number, line) in pkgbuild.lines().enumerate() {
+        if prepare_start == 0 {
+            if line.starts_with("prepare() {") {
+                prepare_start = number;
+                break;
+            }
+        }
+        if build_start == 0 {
+            if line.starts_with("build() {") {
+                build_start = number;
+            }
+        }
+    }
+
+    let mut insert_string = "".to_string();
+    let mut new_pkgbuild: Vec<String> = pkgbuild.lines().map(|s| s.to_string()).collect();
+    if prepare_start != 0 {
+        for patch in patches {
+            insert_string.push_str("patch -Np1 -i ${srcdir}/");
+            insert_string.push_str(&patch.path.file_name().unwrap().to_string_lossy());
+            insert_string.push_str("\n");
+        }
+        new_pkgbuild.insert(prepare_start, insert_string);
+    } else if build_start != 0 {
+        insert_string.push_str("\nprepare() {\n");
+        for patch in patches {
+            insert_string.push_str("\tpatch -Np1 -i ${srcdir}/");
+            insert_string.push_str(&patch.path.file_name().unwrap().to_string_lossy());
+            insert_string.push_str("\n");
+        }
+        insert_string.push_str("}\n");
+        new_pkgbuild.insert(build_start - 1, insert_string);
+    }
+
+    println!("build: {}, prepare: {}", build_start, prepare_start);
+    new_pkgbuild.join("\n")
 }
