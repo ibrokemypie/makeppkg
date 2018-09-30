@@ -28,10 +28,11 @@ fn main() {
     // Open PKGBUILD and return an error if fails
     match File::open("PKGBUILD").map_err(|e| e.to_string()) {
         Ok(_) => {
-            cmd("makepkg", vec!["--printsrcinfo"]).stderr_to_stdout().run();
+            match cmd("makepkg", vec!["--printsrcinfo"]).stderr_to_stdout().run().map_err(|e| e.to_string()){
+                Ok(_) => {},
+                Err(e) => println!("Failed to create .SRCINFO: {}", e)
+            };
             srcinfo = file_to_string(File::open(".SRCINFO").unwrap()).unwrap();
-            // Attempt to parse pkgname from pkgbuild
-            // Run patch if succeed, warn on fail
             match package_name(&srcinfo) {
                 Ok(pkgname) => {
                     println!(", package name: {}", pkgname);
@@ -46,5 +47,8 @@ fn main() {
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
     };
     // Run makepkg
-    cmd("makepkg", options).stderr_to_stdout().run();
+    match cmd("makepkg", options).stderr_to_stdout().run().map_err(|e| e.to_string()){
+        Ok(_) => {},
+        Err(e) => println!("Failed to run makepkg: {}", e)
+    };
 }
