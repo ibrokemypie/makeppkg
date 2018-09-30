@@ -1,11 +1,11 @@
 extern crate checksums;
 
+use duct::cmd;
 use file_to_string::file_to_string;
 use regex::Regex;
-use std::fs::read_dir;
-use std::fs::File;
+use std::fs::{read_dir, read_to_string, File, OpenOptions};
+use std::io::Write;
 use std::path::PathBuf;
-use std::process::Command;
 
 #[derive(Debug)]
 struct PatchFile {
@@ -111,23 +111,19 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
         .iter()
         .position(|item| item.name.eq_ignore_ascii_case("PKGBUILD"))
     {
-        Some(i) => match Command::new("patch")
-            .arg("-i")
-            .arg(&patches[i].path)
-            .output()
-            .map_err(|e| e.to_string())
-        {
-            Ok(output) => {
-                if output.status.success() {
+        Some(i) => {
+            match cmd("patch", vec!["-i", &patches[i].path.to_string_lossy()])
+                .stderr_to_stdout()
+                .run()
+                .map_err(|e| e.to_string())
+            {
+                Ok(_) => {
                     println!("PKGBUILD patched successfully.");
-                    patches.remove(i);
-                } else {
-                    println!("Failed to patch PKGBUILD:");
-                    println!("{}", String::from_utf8_lossy(&output.stdout));
                 }
-            }
-            Err(error) => println!("{}", error),
-        },
+                Err(error) => println!("Failed to patch PKGBUILD: {}", error),
+            };
+            patches.remove(i);
+        }
         None => {
             println!("No patches for PKGBUILD found, continuing.");
         }
@@ -177,11 +173,24 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
         new_checksums.push(patch.checksum.to_owned().unwrap());
     }
 
-    let mut updpkgbuild = file_to_string(File::open("PKGBUILD").unwrap()).unwrap();
+    let mut updpkgbuild = read_to_string("PKGBUILD").unwrap();
+
     updpkgbuild = replace_array_string(&updpkgbuild, "source".to_string(), &new_sources);
     updpkgbuild = replace_array_string(&updpkgbuild, checksum.to_string(), &new_checksums);
-    updpkgbuild = prepend_prepare_patches(&updpkgbuild, &patches);
-    println!("{}", updpkgbuild);
+    updpkgbuild = prepend_prepare_patches(updpkgbuild, &patches);
+
+    println!("Writing updated PKGBUILD...");
+    write!(
+        &OpenOptions::new()
+            .read(false)
+            .write(true)
+            .append(false)
+            .open("PKGBUILD")
+            .unwrap(),
+        "{}",
+        updpkgbuild
+    );
+    println!("PKGBUILD written");
 }
 
 fn replace_array_string(text: &String, name: String, new_array: &Vec<String>) -> String {
@@ -218,43 +227,41 @@ fn replace_array_string(text: &String, name: String, new_array: &Vec<String>) ->
     newtext.join("\n")
 }
 
-fn prepend_prepare_patches(pkgbuild: &String, patches: &Vec<PatchFile>) -> String {
+fn prepend_prepare_patches(pkgbuild: String, patches: &Vec<PatchFile>) -> String {
     let mut prepare_start = 0;
     let mut build_start = 0;
     for (number, line) in pkgbuild.lines().enumerate() {
         if prepare_start == 0 {
             if line.starts_with("prepare() {") {
-                prepare_start = number;
+                prepare_start = number + 1;
                 break;
             }
         }
         if build_start == 0 {
             if line.starts_with("build() {") {
-                build_start = number;
+                build_start = number + 1;
             }
         }
     }
 
     let mut insert_string = "".to_string();
     let mut new_pkgbuild: Vec<String> = pkgbuild.lines().map(|s| s.to_string()).collect();
+    let mut start_line = 0;
     if prepare_start != 0 {
-        for patch in patches {
-            insert_string.push_str("patch -Np1 -i ${srcdir}/");
-            insert_string.push_str(&patch.path.file_name().unwrap().to_string_lossy());
-            insert_string.push_str("\n");
-        }
-        new_pkgbuild.insert(prepare_start, insert_string);
+        start_line = prepare_start;
     } else if build_start != 0 {
-        insert_string.push_str("\nprepare() {\n");
-        for patch in patches {
-            insert_string.push_str("\tpatch -Np1 -i ${srcdir}/");
-            insert_string.push_str(&patch.path.file_name().unwrap().to_string_lossy());
-            insert_string.push_str("\n");
-        }
-        insert_string.push_str("}\n");
-        new_pkgbuild.insert(build_start - 1, insert_string);
+        start_line = build_start - 1;
+        insert_string.push_str("prepare() {\n");
     }
 
-    println!("build: {}, prepare: {}", build_start, prepare_start);
+    for patch in patches {
+        insert_string.push_str(&format!("\tpatch -Np1 -i ${{srcdir}}/{}\n", patch.path.file_name().unwrap().to_string_lossy()));
+    }
+    if prepare_start == 0 {
+        insert_string.push_str("}\n");
+    }
+
+    new_pkgbuild.insert(start_line, insert_string);
+
     new_pkgbuild.join("\n")
 }
