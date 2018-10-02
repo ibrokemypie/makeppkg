@@ -16,9 +16,8 @@ use std::fs::File;
 macro_rules! println {
     () => (print!("\n"));
     ($($arg:tt)*) => (
-    // `stringify!` will convert the expression *as it is* into a string.
-    print!("[MAKEPPKG] {}\n", format_args!($($arg)*))
-)
+        print!("[MAKEPPKG] {}\n", format_args!($($arg)*))
+    )
 }
 
 fn main() {
