@@ -37,7 +37,7 @@ fn main() {
                 Ok(srcinfo) => {
                     match package_name(&srcinfo) {
                         Ok(pkgname) => {
-                            println!(", package name: {}", pkgname);
+                            println!("Package name: {}", pkgname);
                             match patch(location, pkgname, &srcinfo) {
                                 Ok(_) => {}
                                 Err(error) => {
