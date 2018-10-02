@@ -55,7 +55,7 @@ fn main() {
                         }
                     };
                 }
-                Err(e) => println!("Failed to create .SRCINFO: {}", e),
+                Err(e) => println!("Failed run makepkg --printsrcinfo: {}", e),
             };
         }
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
