@@ -20,7 +20,7 @@ fn main() {
     // Parse CLI args
     let (options, location) = arg_parse();
 
-    println!(
+    eprintln!(
         "makeppkg directory: {}, makepkg arguments: {}",
         location.to_string_lossy(),
         options.join(" ")
@@ -36,23 +36,23 @@ fn main() {
                 Ok(srcinfo) => {
                     match package_name(&srcinfo) {
                         Ok(pkgname) => {
-                            println!("Package name: {}", pkgname);
+                            eprintln!("Package name: {}", pkgname);
                             match patch(location, pkgname, &srcinfo) {
                                 Ok(_) => {}
                                 Err(error) => {
-                                    println!("Could not run patches, continuing: {:?}", error)
+                                    eprintln!("Could not run patches, continuing: {:?}", error)
                                 }
                             }
                         }
                         Err(error) => {
-                            println!("Could not retireve package name, continuing: {:?}", error)
+                            eprintln!("Could not retireve package name, continuing: {:?}", error)
                         }
                     };
                 }
-                Err(error) => println!("Failed run makepkg --printsrcinfo: {:?}", error),
+                Err(error) => eprintln!("Failed run makepkg --printsrcinfo: {:?}", error),
             };
         }
-        Err(error) => println!("Couldn't open PKGBUILD: {}", error),
+        Err(error) => eprintln!("Couldn't open PKGBUILD: {}", error),
     };
     // Run makepkg
     match cmd("makepkg", options)
@@ -60,6 +60,6 @@ fn main() {
         .run()
     {
         Ok(_) => {}
-        Err(error) => println!("Failed to run makepkg: {}", error),
+        Err(error) => eprintln!("Failed to run makepkg: {}", error),
     };
 }

@@ -36,7 +36,7 @@ pub fn patch(location: PathBuf, pkgname: String, srcinfo: &String) -> Result<Str
 fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, String>) {
     let patch_path = location.join(pkgname);
     let patch_path_string = patch_path.to_string_lossy().into_owned();
-    println!("Searching for patches in {}", patch_path_string);
+    eprintln!("Searching for patches in {}", patch_path_string);
 
     let mut patches: Vec<PatchFile> = Vec::new();
     for entry in
@@ -67,9 +67,9 @@ fn patch_name(patch_path: PathBuf) -> String {
                     return name.to_string();
                 }
             }
-            Err(error) => println!("{}", error),
+            Err(error) => eprintln!("{}", error),
         },
-        Err(error) => println!("{}", error),
+        Err(error) => eprintln!("{}", error),
     };
     return patch_path
         .file_stem()
@@ -81,7 +81,7 @@ fn patch_name(patch_path: PathBuf) -> String {
 fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &checksums::Algorithm) {
     for mut patch in patches {
         patch.checksum = Some(checksums::hash_file(&patch.path, *algorithm));
-        println!(
+        eprintln!(
             "Patch name {}, path: {:?}, checksum: {:?}",
             &patch.name,
             &patch.path,
@@ -118,14 +118,14 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
                 .map_err(|e| e.to_string())
             {
                 Ok(_) => {
-                    println!("PKGBUILD patched successfully.");
+                    eprintln!("PKGBUILD patched successfully.");
                 }
-                Err(error) => println!("Failed to patch PKGBUILD: {}", error),
+                Err(error) => eprintln!("Failed to patch PKGBUILD: {}", error),
             };
             patches.remove(i);
         }
         None => {
-            println!("No patches for PKGBUILD found, continuing.");
+            eprintln!("No patches for PKGBUILD found, continuing.");
         }
     }
 }
@@ -179,7 +179,7 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
     updpkgbuild = replace_array_string(&updpkgbuild, checksum.to_string(), &new_checksums);
     updpkgbuild = prepend_prepare_patches(updpkgbuild, &patches);
 
-    println!("Writing updated PKGBUILD...");
+    eprintln!("Writing updated PKGBUILD...");
     write!(
         &OpenOptions::new()
             .read(false)
@@ -190,7 +190,7 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
         "{}",
         updpkgbuild
     );
-    println!("PKGBUILD written");
+    eprintln!("PKGBUILD written");
 }
 
 fn replace_array_string(text: &String, name: String, new_array: &Vec<String>) -> String {

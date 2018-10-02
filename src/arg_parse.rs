@@ -32,7 +32,7 @@ pub fn arg_parse() -> (Vec<String>, PathBuf) {
             location = PathBuf::from(unwrapped.1);
         } else {
             // Fail if -f provided with no location
-            println!("Provide a location when using the -f option");
+            eprintln!("Provide a location when using the -f option");
             process::exit(1);
         }
     }

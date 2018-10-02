@@ -1,7 +1,7 @@
 #[macro_export]
-macro_rules! println {
-    () => (print!("\n"));
+macro_rules! eprintln {
+    () => (eprint!("\n"));
     ($($arg:tt)*) => (
-        print!("[MAKEPPKG] {}\n", format_args!($($arg)*))
+        eprint!("[MAKEPPKG] {}\n", format_args!($($arg)*))
     )
 }
