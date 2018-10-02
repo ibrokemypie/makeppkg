@@ -1,1 +1,27 @@
+sudo: required
+
 language: rust
+
+cache: cargo
+
+services:
+- docker
+
+env:
+- CC=gcc CXX=g++ RUST_BACKTRACE=1
+
+arch:
+  packages:
+  - rust
+  - yajl
+  env:
+  - CC=gcc
+  - CXX=g++
+  - RUST_BACKTRACE=1
+  script:
+  - cargo build
+  - curl -o PKGBUILD "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower"
+  - ./target/debug/makeppkg
+
+script:
+- "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
