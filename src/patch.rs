@@ -23,13 +23,15 @@ pub fn patch(location: PathBuf, pkgname: String, srcinfo: &String) -> Result<Str
 
     patch_pkgbuild(&mut patches);
 
-    let algorithm;
-    match find_algorithm(&srcinfo) {
-        Ok(found_algorithm) => algorithm = found_algorithm,
-        Err(error) => return Err(error),
-    };
-    compute_sums(&mut patches, &algorithm);
-    append_patches(&patches, &algorithm, &srcinfo);
+    if patches.len() != 0 {
+        let algorithm;
+        match find_algorithm(&srcinfo) {
+            Ok(found_algorithm) => algorithm = found_algorithm,
+            Err(error) => return Err(error),
+        };
+        compute_sums(&mut patches, &algorithm);
+        append_patches(&patches, &algorithm, &srcinfo);
+    }
     Ok("worked".to_string())
 }
 
@@ -255,7 +257,10 @@ fn prepend_prepare_patches(pkgbuild: String, patches: &Vec<PatchFile>) -> String
     }
 
     for patch in patches {
-        insert_string.push_str(&format!("\tpatch -Np1 -i ${{srcdir}}/{}\n", patch.path.file_name().unwrap().to_string_lossy()));
+        insert_string.push_str(&format!(
+            "\tpatch -Np1 -i ${{srcdir}}/{}\n",
+            patch.path.file_name().unwrap().to_string_lossy()
+        ));
     }
     if prepare_start == 0 {
         insert_string.push_str("}\n");
