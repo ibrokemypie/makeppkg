@@ -20,19 +20,19 @@ pub fn arg_parse() -> (Vec<String>, PathBuf) {
     let mut options: Vec<String> = args().collect();
 
     // Find -f
-    if arguments.find(|(_, x)| x == &"-f".to_string()) != None {
+    if arguments.find(|(_, x)| x == &"-l".to_string()) != None {
         let string = arguments.next();
         if string.is_some() {
-            // Remove -f and following value from arguments that are passed to makepkg
+            // Remove -l and following value from arguments that are passed to makepkg
             let unwrapped = string.unwrap();
             let index = unwrapped.0;
             options.remove(index);
             options.remove(index - 1);
-            // Store value after -f as new location
+            // Store value after -l as new location
             location = PathBuf::from(unwrapped.1);
         } else {
-            // Fail if -f provided with no location
-            eprintln!("Provide a location when using the -f option");
+            // Fail if -l provided with no location
+            eprintln!("Provide a location when using the -l option");
             process::exit(1);
         }
     }
