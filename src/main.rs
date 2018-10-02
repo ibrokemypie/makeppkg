@@ -2,6 +2,8 @@ extern crate duct;
 extern crate libc;
 extern crate regex;
 
+#[macro_use]
+mod macros;
 mod arg_parse;
 mod file_to_string;
 mod package_name;
@@ -13,12 +15,6 @@ use package_name::package_name;
 use patch::patch;
 use std::fs::File;
 
-macro_rules! println {
-    () => (print!("\n"));
-    ($($arg:tt)*) => (
-        print!("[MAKEPPKG] {}\n", format_args!($($arg)*))
-    )
-}
 
 fn main() {
     // Parse CLI args
