@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `checksums` crate."><meta name="keywords" content="rust, rustlang, rust-lang, checksums"><title>checksums - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Crate checksums</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'checksums', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='in-band'>Crate <a class="mod" href=''>checksums</a></span><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/checksums/lib.rs.html#1-229' title='goto source code'>[src]</a></span></h1><div class='docblock'><p>Tool for making/verifying checksums of directory trees.</p>
+<h1 id="library-doc" class="section-header"><a href="#library-doc">Library doc</a></h1>
+<p>This library is used by <code>checksums</code> itself for all its function and is therefore contains all necessary functions.</p>
+<h2 id="data-flow" class="section-header"><a href="#data-flow">Data flow</a></h2>
+<p>Hash verification</p>
+<pre><code class="language-plaintext">Options
+|&gt; create_hashes()
+|&gt; load_hashes()
+|&gt; compare_hashes()
+|&gt; write_hash_comparison_results()
+</code></pre>
+<p>Hash creation</p>
+<pre><code class="language-plaintext">Options
+|&gt; create_hashes()
+|&gt; write_hashes()
+</code></pre>
+<h1 id="executable-manpage" class="section-header"><a href="#executable-manpage">Executable manpage</a></h1>
+<p>Exit values and possible errors:</p>
+<pre><code class="language-text">1   - option parsing error
+2   - hash lengths differ between selected and saved
+3   - failed to parse hashes file
+N+3 - N files didn't match
+</code></pre>
+<h2 id="synopsis" class="section-header"><a href="#synopsis">SYNOPSIS</a></h2>
+<p><a href="https://github.com/nabijaczleweli/checksums"><code>checksums</code></a> [OPTIONS] [DIRECTORY]</p>
+<h2 id="description" class="section-header"><a href="#description">DESCRIPTION</a></h2>
+<p>Tool for making/verifying checksums of directory trees.</p>
+<p>Use the generated checksums to automatically verify file/directory tree
+correctness.</p>
+<p>All output is wrapped to 80 columns.</p>
+<h2 id="options" class="section-header"><a href="#options">OPTIONS</a></h2>
+<p>-a --algorithm &lt;algorithm&gt;</p>
+<pre><code class="language-text">Set the hashing algorithm to use.
+
+Supported algorithms: SHA1, SHA2-256, SHA2-512, SHA3-256, SHA3-512, BLAKE,
+                      BLAKE2, CRC8, CRC16, CRC32, CRC64, MD5, MD6-128,
+                      MD6-256, MD6-512, XOR8
+</code></pre>
+<p>-c --create</p>
+<pre><code class="language-text">Create directory hashes, rather than verifying them.
+
+Directory hashes are output to the output file, which, if not specified, will
+be &quot;`DIRECTORY`.hash&quot;.
+
+Will fail if the output file already exists and `--force` is not specified.
+
+Exclusive with `--verify`. Overrides `--verify`.
+</code></pre>
+<p>-v --verify</p>
+<pre><code class="language-text">Verify directory hashes. Default.
+
+Exclusive with `--create`. Overrides `--create`.
+</code></pre>
+<p>-d --depth &lt;depth&gt;</p>
+<pre><code class="language-text">Set max recursion depth to `depth`. Default: 0.
+
+Exclusive with `--recursive`. Overrides `--recursive`.
+</code></pre>
+<p>-r --recursive</p>
+<pre><code class="language-text">Set max recursion depth to infinity.
+
+Exclusive with `--depth`. Overrides `--depth`.
+</code></pre>
+<p>--follow-symlinks</p>
+<pre><code class="language-text">Recurse down symlinks. Default.
+</code></pre>
+<p>--no-follow-symlinks</p>
+<pre><code class="language-text">Don't recurse down symlinks.
+</code></pre>
+<p>-i --ignore &lt;filename[,filename2][,filename3][,filenameN]...&gt;...</p>
+<pre><code class="language-text">Add filename(s) to ignored files list. Default: none.
+
+Ignored files are marked as such.
+
+Accepted multiple times.
+</code></pre>
+<p>--force</p>
+<pre><code class="language-text">Override output file in `--create` mode. No meaning in `--verify` mode.
+</code></pre>
+<p>-j --jobs [jobs]</p>
+<pre><code class="language-text">Amount of threads used for hashing. Default: # of CPU threads
+
+One thread can hash one file at a time, potentially speeding up hashing
+up to `jobs` times.
+
+No/empty value: # of CPU threads. -1: Infinite
+</code></pre>
+<p>[DIRECTORY]</p>
+<pre><code class="language-text">Directory to create/verify hash for. Default: current workdir.
+</code></pre>
+<h2 id="examples" class="section-header"><a href="#examples">EXAMPLES</a></h2>
+<p><code>checksums</code> [<code>-v</code>] [<code>-f</code> <em>infile</em>]</p>
+<pre><code class="language-text">Verify the current directory tree against the saved hashes.
+
+`-v` is not necessary as it's the default.
+
+*infile* defaults to &quot;`DIRECTORY`.hash&quot;
+
+Example output:
+  File added: &quot;file_that_was_not_here_before&quot;
+  File removed: &quot;file_that_was_here_before_but_not_now&quot;
+  File ignored: &quot;file_specified_with_ignore_now_or_during_creation&quot;
+
+  File &quot;file_that_did_not_change&quot; matches
+  File &quot;changed_file&quot; doesn't match
+    Was: 8313958F86F7B15D4775D12886D479C1CFAAA111
+    Is : FCFC1548B30B5ACB25A7421D068E12F07DF74DCC
+</code></pre>
+<p><code>examples</code> <code>-c</code> [<code>-f</code> <em>outfile</em>] [<code>--force</code>]</p>
+<pre><code class="language-text">Create hashes of the current directory tree for later verification.
+
+*outfile* defaults to &quot;`DIRECTORY`.hash&quot;.
+
+Use `--force` to override *outfile*.
+
+Example output:
+  FILENAME 722 / 722 [===============================================] 100.00 %
+
+*outfile* contents:
+  a_file.txt      8313958F86F7B15D4775D12886D479C1CFAAA111
+  *outfile*.hash  ----------------------------------------
+  different_file  8D742C1F2D39434771039E98AD854C72F91FCCA5
+</code></pre>
+<p><code>examples</code> [<code>-d</code> <em>depth</em>] [<code>-r</code>] [<code>OTHER OPTIONS</code>]</p>
+<pre><code class="language-text">Recurse *depth* or infinity directories down.
+
+Example output for *depth*=2:
+  File &quot;dir1/dir2/file&quot; matches
+  File &quot;dir1/file&quot; matches
+  File &quot;file&quot; matches
+</code></pre>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="ops/index.html"
+                                  title='mod checksums::ops'>ops</a></td>
+                           <td class='docblock-short'>
+                                <p>Main functions doing actual work.</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="mod" href="util/index.html"
+                                  title='mod checksums::util'>util</a></td>
+                           <td class='docblock-short'>
+                                <p>Module containing various utility functions</p>
+
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Options.html"
+                                  title='struct checksums::Options'>Options</a></td>
+                           <td class='docblock-short'>
+                                <p>Representation of the application's all configurable values.</p>
+
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.Algorithm.html"
+                                  title='enum checksums::Algorithm'>Algorithm</a></td>
+                           <td class='docblock-short'>
+                                <p>A hashing algorithm.</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.Error.html"
+                                  title='enum checksums::Error'>Error</a></td>
+                           <td class='docblock-short'>
+                                <p>Enum representing each way the appication can fail.</p>
+
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.hash_file.html"
+                                  title='fn checksums::hash_file'>hash_file</a></td>
+                           <td class='docblock-short'>
+                                <p>Hash the specified file using the specified hashing algorithm.</p>
+
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="fn" href="fn.hash_string.html"
+                                  title='fn checksums::hash_string'>hash_string</a></td>
+                           <td class='docblock-short'>
+                                <p>Create a hash string out of its raw bytes.</p>
+
+                           </td>
+                       </tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "checksums";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

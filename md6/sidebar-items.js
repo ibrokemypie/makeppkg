@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Md6Error","Some functions in the library can fail, this enum represents all the possible ways they can."]],"fn":[["hash","Hash all data in one fell swoop."]],"struct":[["Md6","Hashing state for multiple data sets."]],"type":[["Result","Helper result type containing `Md6Error`."]]});
