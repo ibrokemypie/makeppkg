@@ -32,7 +32,6 @@ fn main() {
             match cmd("makepkg", vec!["--printsrcinfo"])
                 .stderr_to_stdout()
                 .read()
-                .map_err(|e| e.to_string())
             {
                 Ok(srcinfo) => {
                     match package_name(&srcinfo) {
@@ -50,7 +49,7 @@ fn main() {
                         }
                     };
                 }
-                Err(e) => println!("Failed run makepkg --printsrcinfo: {}", e),
+                Err(error) => println!("Failed run makepkg --printsrcinfo: {:?}", error),
             };
         }
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
@@ -59,9 +58,8 @@ fn main() {
     match cmd("makepkg", options)
         .stderr_to_stdout()
         .run()
-        .map_err(|e| e.to_string())
     {
         Ok(_) => {}
-        Err(e) => println!("Failed to run makepkg: {}", e),
+        Err(error) => println!("Failed to run makepkg: {}", error),
     };
 }
