@@ -18,16 +18,17 @@ use std::fs::File;
 
 fn main() {
     // Parse CLI args
-    let (options, location) = arg_parse();
+    let (options, location, pkgbuild_path) = arg_parse();
 
     eprintln!(
-        "makeppkg directory: {}, makepkg arguments: {}",
+        "makeppkg directory: {}, makepkg arguments: {}, pkgbuild path: {}",
         location.to_string_lossy(),
-        options.join(" ")
+        options.join(" "),
+        pkgbuild_path
     );
 
     // Open PKGBUILD and return an error if fails
-    match File::open("PKGBUILD").map_err(|e| e.to_string()) {
+    match File::open(pkgbuild_path).map_err(|e| e.to_string()) {
         Ok(_) => {
             match cmd("makepkg", vec!["--printsrcinfo"])
                 .stderr_to_stdout()
