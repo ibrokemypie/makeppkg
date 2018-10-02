@@ -13,11 +13,19 @@ use package_name::package_name;
 use patch::patch;
 use std::fs::File;
 
+macro_rules! println {
+    () => (print!("\n"));
+    ($($arg:tt)*) => (
+    // `stringify!` will convert the expression *as it is* into a string.
+    print!("[MAKEPPKG] {}\n", format_args!($($arg)*))
+)
+}
+
 fn main() {
     // Parse CLI args
     let (options, location) = arg_parse();
 
-    print!(
+    println!(
         "makeppkg directory: {}, makepkg arguments: {}",
         location.to_string_lossy(),
         options.join(" ")
@@ -37,10 +45,14 @@ fn main() {
                             println!(", package name: {}", pkgname);
                             match patch(location, pkgname, &srcinfo) {
                                 Ok(_) => {}
-                                Err(error) => println!("Could not run patches, continuing: {:?}", error),
+                                Err(error) => {
+                                    println!("Could not run patches, continuing: {:?}", error)
+                                }
                             }
                         }
-                        Err(error) => println!("Could not retireve package name, continuing: {:?}", error),
+                        Err(error) => {
+                            println!("Could not retireve package name, continuing: {:?}", error)
+                        }
                     };
                 }
                 Err(e) => println!("Failed to create .SRCINFO: {}", e),
