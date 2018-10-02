@@ -2,7 +2,6 @@ extern crate xdg;
 
 use std::env::args;
 use std::path::PathBuf;
-use std::process;
 
 // Parses arguments from CLI
 pub fn arg_parse() -> (Vec<String>, PathBuf, String) {
@@ -18,37 +17,24 @@ pub fn arg_parse() -> (Vec<String>, PathBuf, String) {
 
     let mut options: Vec<String> = args().collect();
 
-    // Find -f
-    let mut arguments = args().enumerate();
-    if arguments.find(|(_, x)| x == &"-l".to_string()) != None {
-        let string = arguments.next();
-        if string.is_some() {
-            // Remove -l and following value from arguments that are passed to makepkg
-            let unwrapped = string.unwrap();
-            let index = unwrapped.0;
-            options.remove(index);
-            options.remove(index - 1);
-            // Store value after -l as new location
-            location = PathBuf::from(unwrapped.1);
-        } else {
-            // Fail if -l provided with no location
-            eprintln!("Provide a location when using the -l option");
-            process::exit(1);
+    let iter = options.to_owned();
+    let mut iter = iter.iter().enumerate().peekable();
+    while let Some((i, value)) = iter.next() {
+        if &value == &"-l" {
+            //let arg = iter.peek();
+            if iter.peek().is_some() {
+                location = PathBuf::from(iter.peek().unwrap().1);
+                options.remove(i + 1);
+                options.remove(i);
+            } else {}
+        }
+        if &value == &"-p" {
+            //let arg = iter.peek();
+            if iter.peek().is_some() {
+                pkgbuild_path = iter.peek().unwrap().1.to_string();
+            }
         }
     }
-
-    let mut arguments = args().enumerate();
-    if arguments.find(|(_, x)| x == &"-p".to_string()) != None {
-        println!("found -p");
-        let string = arguments.next();
-        if string.is_some() {
-            // Remove -l and following value from arguments that are passed to makepkg
-            let unwrapped = string.unwrap();
-            // Store value after -l as new location
-            pkgbuild_path = unwrapped.1;
-        }
-    }
-    // Remove first argument (executable path)
     options.remove(0);
 
     return (options, location, pkgbuild_path);
