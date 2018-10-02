@@ -9,7 +9,6 @@ mod patch;
 
 use arg_parse::arg_parse;
 use duct::cmd;
-use file_to_string::file_to_string;
 use package_name::package_name;
 use patch::patch;
 use std::fs::File;
@@ -24,28 +23,27 @@ fn main() {
         options.join(" ")
     );
 
-    let srcinfo;
     // Open PKGBUILD and return an error if fails
     match File::open("PKGBUILD").map_err(|e| e.to_string()) {
         Ok(_) => {
             match cmd("makepkg", vec!["--printsrcinfo"])
                 .stderr_to_stdout()
-                .run()
+                .read()
                 .map_err(|e| e.to_string())
             {
-                Ok(_) => {}
-                Err(e) => println!("Failed to create .SRCINFO: {}", e),
-            };
-            srcinfo = file_to_string(File::open(".SRCINFO").unwrap()).unwrap();
-            match package_name(&srcinfo) {
-                Ok(pkgname) => {
-                    println!(", package name: {}", pkgname);
-                    match patch(location, pkgname, &srcinfo) {
-                        Ok(_) => {}
-                        Err(error) => println!("Could not run patches, continuing: {:?}", error),
-                    }
+                Ok(srcinfo) => {
+                    match package_name(&srcinfo) {
+                        Ok(pkgname) => {
+                            println!(", package name: {}", pkgname);
+                            match patch(location, pkgname, &srcinfo) {
+                                Ok(_) => {}
+                                Err(error) => println!("Could not run patches, continuing: {:?}", error),
+                            }
+                        }
+                        Err(error) => println!("Could not retireve package name, continuing: {:?}", error),
+                    };
                 }
-                Err(error) => println!("Could not retireve package name, continuing: {:?}", error),
+                Err(e) => println!("Failed to create .SRCINFO: {}", e),
             };
         }
         Err(error) => println!("Couldn't open PKGBUILD: {}", error),
