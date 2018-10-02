@@ -1,7 +1,12 @@
 [package]
 name = "makeppkg"
+description = "wrapper for Arch Linux's makepkg, patches source before packages are built"
 version = "1.0.0"
 authors = ["ibrokemypie <ibrokemypie@bastardi.net>"]
+homepage = "https://github.com/ibrokemypie/makeppkg"
+license = "Apache-2.0"
+repository = "https://github.com/ibrokemypie/makeppkg"
+readme = "README.md"
 
 [dependencies]
 xdg = "^2.1"
@@ -9,3 +14,6 @@ checksums = "0.5.5"
 libc = "^0.1.0"
 duct = "^0.11.1"
 regex = "1"
+
+[badges]
+travis-ci = { repository = "https://github.com/ibrokemypie/makeppkg", branch = "master" }
