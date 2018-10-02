@@ -14,10 +14,6 @@ arch:
   packages:
   - rust
   - yajl
-  env:
-  - CC=gcc
-  - CXX=g++
-  - RUST_BACKTRACE=1
   script:
   - cargo build
   - curl -o PKGBUILD "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower"
