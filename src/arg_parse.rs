@@ -2,6 +2,7 @@ extern crate xdg;
 
 use std::env::args;
 use std::path::PathBuf;
+use std::process::exit;
 
 // Parses arguments from CLI
 pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, PathBuf)>) {
@@ -42,6 +43,8 @@ pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, PathBuf)>) {
                 options.remove(i + 1);
                 options.remove(i);
             } else {
+                eprintln!("Specify makeppkg location when using -l flag.");
+                exit(1);
             }
         }
         if &value == &"-p" {
