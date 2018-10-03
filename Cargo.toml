@@ -10,9 +10,11 @@ readme = "README.md"
 
 [dependencies]
 xdg = "^2.1"
-checksums = "0.5.5"
 duct = "^0.11.1"
 regex = "1"
+md5 = "0.4.0"
+sha2 = "0.8.0"
+sha-1 = "0.8.0"
 
 [badges]
 travis-ci = { repository = "/ibrokemypie/makeppkg", branch = "master" }

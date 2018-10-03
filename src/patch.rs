@@ -1,5 +1,4 @@
-extern crate checksums;
-
+use compute_sums::{compute_md5, compute_sha1, compute_sha256, compute_sha512};
 use duct::cmd;
 use file_to_string::file_to_string;
 use regex::Regex;
@@ -12,6 +11,11 @@ struct PatchFile {
     name: String,
     path: PathBuf,
     checksum: Option<String>,
+}
+
+struct Algorithm {
+    name: String,
+    function: fn(&PathBuf) -> String,
 }
 
 pub fn patch(
@@ -85,9 +89,9 @@ fn patch_name(patch_path: PathBuf) -> String {
         .into_owned();
 }
 
-fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &checksums::Algorithm) {
+fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &Algorithm) {
     for mut patch in patches {
-        patch.checksum = Some(checksums::hash_file(&patch.path, *algorithm));
+        patch.checksum = Some((algorithm.function)(&patch.path));
         eprintln!(
             "Patch name {}, path: {:?}, checksum: {:?}",
             &patch.name,
@@ -97,17 +101,29 @@ fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &checksums::Algorithm) 
     }
 }
 
-fn find_algorithm(srcinfo: &String) -> Result<checksums::Algorithm, String> {
+fn find_algorithm(srcinfo: &String) -> Result<Algorithm, String> {
     for mut line in srcinfo.lines() {
         line = line.trim();
         if line.starts_with("md5sums = ") {
-            return Ok(checksums::Algorithm::MD5);
+            return Ok(Algorithm {
+                name: "md5".to_string(),
+                function: compute_md5,
+            });
         } else if line.starts_with("sha256sums = ") {
-            return Ok(checksums::Algorithm::SHA2256);
+            return Ok(Algorithm {
+                name: "sha256".to_string(),
+                function: compute_sha256,
+            });
         } else if line.starts_with("sha1sums = ") {
-            return Ok(checksums::Algorithm::SHA1);
+            return Ok(Algorithm {
+                name: "sha1".to_string(),
+                function: compute_sha1,
+            });
         } else if line.starts_with("sha512sums = ") {
-            return Ok(checksums::Algorithm::SHA2512);
+            return Ok(Algorithm {
+                name: "sha512".to_string(),
+                function: compute_sha512,
+            });
         }
     }
     Err("No algorithm found".to_string())
@@ -139,7 +155,7 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
 
 fn append_patches(
     patches: &Vec<PatchFile>,
-    algorithm: &checksums::Algorithm,
+    algorithm: &Algorithm,
     srcinfo: &String,
     pkgbuild_path: &PathBuf,
 ) {
@@ -166,27 +182,10 @@ fn append_patches(
         }
     }
 
-    let checksum;
-    match algorithm {
-        checksums::Algorithm::MD5 => {
-            checksum = "md5sums";
-        }
-        checksums::Algorithm::SHA2256 => {
-            checksum = "sha256sums";
-        }
-        checksums::Algorithm::SHA2512 => {
-            checksum = "sha512sums";
-        }
-        checksums::Algorithm::SHA1 => {
-            checksum = "sha1sums";
-        }
-        _ => {
-            checksum = "null";
-        }
-    }
+    let checksum = format!("{}sums", &algorithm.name);
     let mut new_checksums: Vec<String> = vec![];
     {
-        let re = Regex::new(&(r"(?mi)(?:^\s*".to_owned() + checksum + " = )(.*)+")).unwrap();
+        let re = Regex::new(&(r"(?mi)(?:^\s*".to_owned() + &checksum + " = )(.*)+")).unwrap();
         let checksums = re.captures_iter(&srcinfo);
         for mut sum in checksums {
             new_checksums.push(sum[1].to_string());
