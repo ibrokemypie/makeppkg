@@ -3,7 +3,7 @@ extern crate checksums;
 use duct::cmd;
 use file_to_string::file_to_string;
 use regex::Regex;
-use std::fs::{read_dir, read_to_string, File, OpenOptions};
+use std::fs::{copy, read_dir, read_to_string, File, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -14,7 +14,12 @@ struct PatchFile {
     checksum: Option<String>,
 }
 
-pub fn patch(location: PathBuf, pkgname: String, srcinfo: &String) -> Result<String, String> {
+pub fn patch(
+    location: PathBuf,
+    pkgname: String,
+    srcinfo: &String,
+    pkgbuild_path: &PathBuf,
+) -> Result<String, String> {
     let mut patches;
     match find_patches(location, &pkgname) {
         Ok(found_patches) => patches = found_patches,
@@ -30,7 +35,7 @@ pub fn patch(location: PathBuf, pkgname: String, srcinfo: &String) -> Result<Str
             Err(error) => return Err(error),
         };
         compute_sums(&mut patches, &algorithm);
-        append_patches(&patches, &algorithm, &srcinfo);
+        append_patches(&patches, &algorithm, &srcinfo, &pkgbuild_path);
     }
     Ok("worked".to_string())
 }
@@ -132,7 +137,12 @@ fn patch_pkgbuild(patches: &mut Vec<PatchFile>) {
     }
 }
 
-fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, srcinfo: &String) {
+fn append_patches(
+    patches: &Vec<PatchFile>,
+    algorithm: &checksums::Algorithm,
+    srcinfo: &String,
+    pkgbuild_path: &PathBuf,
+) {
     let mut new_sources: Vec<String> = vec![];
     {
         let re = Regex::new(r"(?mi)(?:^\s*source = )(.*)+").unwrap();
@@ -141,7 +151,18 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
             new_sources.push(source[1].to_string());
         }
         for patch in patches {
-            new_sources.push(patch.path.to_string_lossy().to_string());
+            let mut dest = pkgbuild_path.to_owned();
+            dest.pop();
+            dest.push(&patch.path.file_name().unwrap());
+            copy(&patch.path, dest).unwrap();
+            new_sources.push(
+                patch
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
+            );
         }
     }
 
@@ -175,7 +196,7 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
         new_checksums.push(patch.checksum.to_owned().unwrap());
     }
 
-    let mut updpkgbuild = read_to_string("PKGBUILD").unwrap();
+    let mut updpkgbuild = read_to_string(&pkgbuild_path).unwrap();
 
     updpkgbuild = replace_array_string(&updpkgbuild, "source".to_string(), &new_sources);
     updpkgbuild = replace_array_string(&updpkgbuild, checksum.to_string(), &new_checksums);
@@ -187,7 +208,7 @@ fn append_patches(patches: &Vec<PatchFile>, algorithm: &checksums::Algorithm, sr
             .read(false)
             .write(true)
             .append(false)
-            .open("PKGBUILD")
+            .open(&pkgbuild_path)
             .unwrap(),
         "{}",
         updpkgbuild

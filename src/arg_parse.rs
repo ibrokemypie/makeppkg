@@ -4,7 +4,7 @@ use std::env::args;
 use std::path::PathBuf;
 
 // Parses arguments from CLI
-pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, String)>) {
+pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, PathBuf)>) {
     // Get fallback XDG config home
     let xdg_dirs = xdg::BaseDirectories::with_prefix("makeppkg").unwrap();
     let xdghome = xdg_dirs
@@ -13,7 +13,7 @@ pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, String)>) {
         .into_string()
         .unwrap();
     let mut location = PathBuf::from(xdghome);
-    let mut pkgbuild_path = "PKGBUILD".to_string();
+    let mut pkgbuild_path = PathBuf::from("PKGBUILD");
 
     let blacklist = vec![
         "noextract",
@@ -46,7 +46,7 @@ pub fn arg_parse() -> (Vec<String>, Option<(PathBuf, String)>) {
         }
         if &value == &"-p" {
             if iter.peek().is_some() {
-                pkgbuild_path = iter.peek().unwrap().1.to_string();
+                pkgbuild_path = PathBuf::from(iter.peek().unwrap().1);
             }
         }
     }

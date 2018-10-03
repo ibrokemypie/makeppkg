@@ -25,21 +25,27 @@ fn main() {
             "makeppkg directory: {}, makepkg arguments: {}, pkgbuild path: {}",
             location.to_string_lossy(),
             options.join(" "),
-            pkgbuild_path
+            pkgbuild_path.to_string_lossy()
         );
 
         // Open PKGBUILD and return an error if fails
-        match File::open(pkgbuild_path).map_err(|e| e.to_string()) {
+        match File::open(&pkgbuild_path).map_err(|e| e.to_string()) {
             Ok(_) => {
-                match cmd("makepkg", vec!["--printsrcinfo"])
-                    .stderr_to_stdout()
-                    .read()
+                match cmd(
+                    "makepkg",
+                    vec![
+                        "--printsrcinfo",
+                        "-p",
+                        format!("{}", &pkgbuild_path.to_string_lossy()).as_str(),
+                    ],
+                ).stderr_to_stdout()
+                .read()
                 {
                     Ok(srcinfo) => {
                         match package_name(&srcinfo) {
                             Ok(pkgname) => {
                                 eprintln!("Package name: {}", pkgname);
-                                match patch(location, pkgname, &srcinfo) {
+                                match patch(location, pkgname, &srcinfo, &pkgbuild_path) {
                                     Ok(_) => {}
                                     Err(error) => {
                                         eprintln!("Could not run patches, continuing: {:?}", error)
