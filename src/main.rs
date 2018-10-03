@@ -1,5 +1,4 @@
 extern crate duct;
-extern crate libc;
 extern crate regex;
 
 #[macro_use]

@@ -11,7 +11,6 @@ readme = "README.md"
 [dependencies]
 xdg = "^2.1"
 checksums = "0.5.5"
-libc = "^0.1.0"
 duct = "^0.11.1"
 regex = "1"
 
