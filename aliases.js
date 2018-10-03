@@ -22,6 +22,7 @@ ALIASES['libc'] = {};
 ALIASES['libc'] = {};
 ALIASES['makeppkg'] = {};
 ALIASES['makeppkg'] = {};
+ALIASES['makeppkg'] = {};
 ALIASES['md5'] = {};
 ALIASES['md6'] = {};
 ALIASES['memchr'] = {};
