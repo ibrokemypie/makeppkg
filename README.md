@@ -1,5 +1,24 @@
 # makeppkg
 ### (make, patch, package)
+[![Build Status](https://travis-ci.org/ibrokemypie/makeppkg.svg?branch=master)](https://travis-ci.org/ibrokemypie/makeppkg)
+
+## Installation
+#### Aur:
+[makeppkg](https://aur.archlinux.org/packages/makeppkg/)
+
+[makeppkg-git](https://aur.archlinux.org/packages/makeppkg-git/)
+
+
+#### Source:
+```
+git clone https://github.com/ibrokemypie/makeppkg
+
+cd makeppkg
+
+cargo build --release
+```
+
+Binary will be built at `./target/release/makeppkg`
 
 ## Usage
 `$ makeppkg -l <makeppkg patch dir location>  <makepkg arguments>`
