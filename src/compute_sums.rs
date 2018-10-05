@@ -9,6 +9,16 @@ pub fn compute_sha1(path: &PathBuf) -> String {
     Sha1::digest(&file)[0].to_string()
 }
 
+pub fn compute_sha224(path: &PathBuf) -> String {
+    let file = read(path).unwrap();
+    Sha224::digest(&file)[0].to_string()
+}
+
+pub fn compute_sha384(path: &PathBuf) -> String {
+    let file = read(path).unwrap();
+    Sha384::digest(&file)[0].to_string()
+}
+
 pub fn compute_sha256(path: &PathBuf) -> String {
     let file = read(path).unwrap();
     Sha256::digest(&file)[0].to_string()

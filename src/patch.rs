@@ -1,4 +1,4 @@
-use compute_sums::{compute_md5, compute_sha1, compute_sha256, compute_sha512};
+use compute_sums::{compute_md5, compute_sha1, compute_sha256, compute_sha512, compute_sha224, compute_sha384};
 use duct::cmd;
 use file_to_string::file_to_string;
 use regex::Regex;
@@ -125,6 +125,16 @@ fn find_algorithm(srcinfo: &String) -> Result<Algorithm, String> {
             return Ok(Algorithm {
                 name: "sha512".to_string(),
                 function: compute_sha512,
+            });
+        } else if line.starts_with("sha224sums = ") {
+            return Ok(Algorithm {
+                name: "sha224".to_string(),
+                function: compute_sha224,
+            });
+        } else if line.starts_with("sha384sums = ") {
+            return Ok(Algorithm {
+                name: "sha384".to_string(),
+                function: compute_sha384,
             });
         }
     }
