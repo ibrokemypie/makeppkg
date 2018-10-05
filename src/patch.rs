@@ -1,10 +1,14 @@
-use compute_sums::{compute_md5, compute_sha1, compute_sha256, compute_sha512, compute_sha224, compute_sha384};
 use duct::cmd;
 use file_to_string::file_to_string;
+use md5::Md5;
+use digest::Digest;
 use regex::Regex;
+use sha1::Sha1;
+use sha2::{Sha224, Sha256, Sha384, Sha512};
+use std::fs::read;
 use std::fs::{copy, read_dir, read_to_string, File, OpenOptions};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{PathBuf,Path};
 
 #[derive(Debug)]
 struct PatchFile {
@@ -15,7 +19,7 @@ struct PatchFile {
 
 struct Algorithm {
     name: String,
-    function: fn(&PathBuf) -> String,
+    function: fn(&Path) -> String,
 }
 
 pub fn patch(
@@ -93,7 +97,8 @@ fn patch_name(patch_path: PathBuf) -> String {
 
 fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &Algorithm) {
     for mut patch in patches {
-        patch.checksum = Some((algorithm.function)(&patch.path));
+        patch.checksum = Some((algorithm.function)(&patch.path.as_path()));
+        println!("{:?}", patch.checksum);
         eprintln!(
             "Patch name {}, path: {:?}, checksum: {:?}",
             &patch.name,
@@ -106,37 +111,15 @@ fn compute_sums(patches: &mut Vec<PatchFile>, algorithm: &Algorithm) {
 fn find_algorithm(srcinfo: &String) -> Result<Algorithm, String> {
     for mut line in srcinfo.lines() {
         line = line.trim();
-        if line.starts_with("md5sums = ") {
-            return Ok(Algorithm {
-                name: "md5".to_string(),
-                function: compute_md5,
-            });
-        } else if line.starts_with("sha256sums = ") {
-            return Ok(Algorithm {
-                name: "sha256".to_string(),
-                function: compute_sha256,
-            });
-        } else if line.starts_with("sha1sums = ") {
-            return Ok(Algorithm {
-                name: "sha1".to_string(),
-                function: compute_sha1,
-            });
-        } else if line.starts_with("sha512sums = ") {
-            return Ok(Algorithm {
-                name: "sha512".to_string(),
-                function: compute_sha512,
-            });
-        } else if line.starts_with("sha224sums = ") {
-            return Ok(Algorithm {
-                name: "sha224".to_string(),
-                function: compute_sha224,
-            });
-        } else if line.starts_with("sha384sums = ") {
-            return Ok(Algorithm {
-                name: "sha384".to_string(),
-                function: compute_sha384,
-            });
-        }
+
+        choose_algo!(line,
+            Md5::digest, "md5",
+            Sha1::digest, "sha1",
+            Sha224::digest, "sha224",
+            Sha256::digest, "sha256",
+            Sha384::digest, "sha384",
+            Sha512::digest, "sha512"
+            );
     }
     Err("No algorithm found".to_string())
 }

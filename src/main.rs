@@ -3,6 +3,7 @@ extern crate regex;
 extern crate md5;
 extern crate sha2;
 extern crate sha1;
+extern crate digest;
 
 #[macro_use]
 mod macros;
@@ -10,7 +11,6 @@ mod arg_parse;
 mod file_to_string;
 mod package_name;
 mod patch;
-mod compute_sums;
 
 use arg_parse::arg_parse;
 use duct::cmd;
