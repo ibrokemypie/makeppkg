@@ -271,7 +271,7 @@ fn prepend_prepare_patches(pkgbuild: String, patches: &Vec<PatchFile>) -> String
         }
     }
 
-    let mut insert_string = "".to_string();
+    let mut insert_string = String::new();
     let mut new_pkgbuild: Vec<String> = pkgbuild.lines().map(|s| s.to_string()).collect();
     let mut start_line = 0;
     if prepare_start != 0 {
