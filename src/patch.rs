@@ -30,16 +30,18 @@ pub fn patch(
         Err(error) => return Err(error),
     };
 
-    patch_pkgbuild(&mut patches);
-
     if patches.len() != 0 {
-        let algorithm;
-        match find_algorithm(&srcinfo) {
-            Ok(found_algorithm) => algorithm = found_algorithm,
-            Err(error) => return Err(error),
-        };
-        compute_sums(&mut patches, &algorithm);
-        append_patches(&patches, &algorithm, &srcinfo, &pkgbuild_path);
+        patch_pkgbuild(&mut patches);
+
+        if patches.len() != 0 {
+            let algorithm;
+            match find_algorithm(&srcinfo) {
+                Ok(found_algorithm) => algorithm = found_algorithm,
+                Err(error) => return Err(error),
+            };
+            compute_sums(&mut patches, &algorithm);
+            append_patches(&patches, &algorithm, &srcinfo, &pkgbuild_path);
+        }
     }
     Ok("worked".to_string())
 }
