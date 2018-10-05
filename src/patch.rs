@@ -5,9 +5,8 @@ use md5::Md5;
 use regex::Regex;
 use sha1::Sha1;
 use sha2::{Sha224, Sha256, Sha384, Sha512};
-use std::fs::read;
-use std::fs::{copy, read_dir, read_to_string, File, OpenOptions};
-use std::io::Write;
+use std::fs::{copy, read, read_dir, read_to_string, File, OpenOptions};
+use std::io::{Write, Read};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -27,7 +26,8 @@ pub fn patch(
     pkgname: String,
     srcinfo: &String,
     pkgbuild_path: &PathBuf,
-) -> Result<String, String> {
+    pkgbuild_file: &File,
+) -> Result<Vec<u8>, String> {
     let mut patches;
     match find_patches(location, &pkgname) {
         Ok(found_patches) => patches = found_patches,
@@ -35,6 +35,8 @@ pub fn patch(
     };
 
     if patches.len() != 0 {
+        let mut pkgbuild_contents = vec![];
+        pkgbuild_file.clone().read_to_end(&mut pkgbuild_contents).map_err(|e| e.to_string()) ?;
         patch_pkgbuild(&mut patches);
 
         if patches.len() != 0 {
@@ -46,8 +48,9 @@ pub fn patch(
             compute_sums(&mut patches, &algorithm);
             append_patches(&patches, &algorithm, &srcinfo, &pkgbuild_path);
         }
+        return Ok(pkgbuild_contents);
     }
-    Ok("worked".to_string())
+    Err("No patches found".to_string())
 }
 
 fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, String>) {
