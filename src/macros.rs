@@ -11,7 +11,6 @@ macro_rules! choose_algo {
     ($line:expr, $($i:expr, $name:expr),*) => {
     $(
         if $line.starts_with(&(String::from($name) + "sums = ")) {
-            println!("{:?}", $name);
             return Ok(Algorithm {
                 name: String::from($name),
                 function: |path: &Path| -> String {
