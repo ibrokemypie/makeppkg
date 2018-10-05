@@ -31,7 +31,7 @@ If no patches are found, makeppkg will simply wrap makepkg.
 ## Details
 Makeppkg will search the makeppkg patch dir for a folder named after the package being build (taken from the PKGBUILD, the first name found if it is a multi package script).
 
-If the patch directory is found, it will be searched for files ending in `.patch`.
+If the patch directory is found, it will be searched for files ending in `.patch` or `.diff`.
 
 Makeppkg will then apply patches to the PKGBUILD if any are found, getting the destination file name from the patch contents, falling back to the base name of the patch file.
 

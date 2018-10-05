@@ -64,7 +64,7 @@ fn find_patches(location: PathBuf, pkgname: &String) -> (Result<Vec<PatchFile>, 
     {
         let patch_path = entry.map_err(|e| e.to_string())?.path();
         let patch_name = patch_name(patch_path.to_owned());
-        if patch_path.to_string_lossy().ends_with(".patch") {
+        if patch_path.to_string_lossy().ends_with(".patch") || patch_path.to_string_lossy().ends_with(".diff") {
             let mut patch = PatchFile {
                 name: patch_name,
                 path: patch_path,
