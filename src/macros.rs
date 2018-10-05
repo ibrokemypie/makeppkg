@@ -16,7 +16,8 @@ macro_rules! choose_algo {
                 name: String::from($name),
                 function: |path: &Path| -> String {
                     let file = read(path).unwrap();
-                    $i(&file)[0].to_string()
+                    let result = $i(&file);
+                     format!("{:x}", &result)
                 },
             });
         })*

@@ -1,14 +1,14 @@
+use digest::Digest;
 use duct::cmd;
 use file_to_string::file_to_string;
 use md5::Md5;
-use digest::Digest;
 use regex::Regex;
 use sha1::Sha1;
 use sha2::{Sha224, Sha256, Sha384, Sha512};
 use std::fs::read;
 use std::fs::{copy, read_dir, read_to_string, File, OpenOptions};
 use std::io::Write;
-use std::path::{PathBuf,Path};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 struct PatchFile {
@@ -112,14 +112,21 @@ fn find_algorithm(srcinfo: &String) -> Result<Algorithm, String> {
     for mut line in srcinfo.lines() {
         line = line.trim();
 
-        choose_algo!(line,
-            Md5::digest, "md5",
-            Sha1::digest, "sha1",
-            Sha224::digest, "sha224",
-            Sha256::digest, "sha256",
-            Sha384::digest, "sha384",
-            Sha512::digest, "sha512"
-            );
+        choose_algo!(
+            line,
+            Md5::digest,
+            "md5",
+            Sha1::digest,
+            "sha1",
+            Sha224::digest,
+            "sha224",
+            Sha256::digest,
+            "sha256",
+            Sha384::digest,
+            "sha384",
+            Sha512::digest,
+            "sha512"
+        );
     }
     Err("No algorithm found".to_string())
 }

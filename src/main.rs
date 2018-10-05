@@ -1,9 +1,9 @@
-extern crate duct;
-extern crate regex;
-extern crate md5;
-extern crate sha2;
-extern crate sha1;
 extern crate digest;
+extern crate duct;
+extern crate md5;
+extern crate regex;
+extern crate sha1;
+extern crate sha2;
 
 #[macro_use]
 mod macros;
