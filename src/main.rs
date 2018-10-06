@@ -92,5 +92,11 @@ fn main() {
             }
             Err(error) => eprintln!("Couldn't open PKGBUILD: {}", error),
         };
+    } else {
+        // Run makepkg
+        match cmd("makepkg", options).stderr_to_stdout().run() {
+            Ok(_) => {}
+            Err(error) => eprintln!("Failed to run makepkg: {}", error),
+        };
     }
 }
